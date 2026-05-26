@@ -7,238 +7,94 @@
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg: #0d0d0f;
-    --surface: #16161a;
-    --surface2: #1e1e24;
-    --border: #2a2a35;
-    --gold: #f5c842;
-    --gold2: #e8a800;
-    --red: #e63946;
-    --blue: #4cc9f0;
-    --green: #57cc99;
-    --text: #f0f0f4;
-    --muted: #7a7a90;
-    --pill: #252530;
+    --bg: #0d0d0f; --surface: #16161a; --surface2: #1e1e24;
+    --border: #2a2a35; --gold: #f5c842; --gold2: #e8a800;
+    --red: #e63946; --blue: #4cc9f0; --green: #57cc99;
+    --text: #f0f0f4; --muted: #7a7a90; --pill: #252530;
   }
-
   * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-serif; min-height: 100vh; overflow-x: hidden; }
 
-  body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: 'DM Sans', sans-serif;
-    min-height: 100vh;
-    overflow-x: hidden;
+  /* ── PASSCODE SCREEN ── */
+  #passcodeScreen {
+    position: fixed; inset: 0; background: var(--bg); z-index: 1000;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 24px;
   }
+  #passcodeScreen.hidden { display: none; }
+  .pc-logo { font-family: 'Bebas Neue', sans-serif; font-size: 36px; letter-spacing: 3px; color: var(--gold); text-align: center; }
+  .pc-sub { font-family: 'DM Mono', monospace; font-size: 12px; color: var(--muted); letter-spacing: 1px; text-align: center; margin-top: -16px; }
+  .pc-dots { display: flex; gap: 14px; margin: 8px 0; }
+  .pc-dot { width: 16px; height: 16px; border-radius: 50%; border: 2px solid var(--border); background: transparent; transition: all .15s; }
+  .pc-dot.filled { background: var(--gold); border-color: var(--gold); }
+  .pc-dot.error { background: var(--red); border-color: var(--red); }
+  .pc-grid { display: grid; grid-template-columns: repeat(3, 72px); gap: 12px; }
+  .pc-btn {
+    height: 72px; background: var(--surface); border: 1.5px solid var(--border);
+    border-radius: 14px; font-size: 24px; font-weight: 600; color: var(--text);
+    cursor: pointer; transition: all .12s; font-family: 'DM Sans', sans-serif;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .pc-btn:hover { border-color: var(--gold); color: var(--gold); background: var(--surface2); }
+  .pc-btn:active { transform: scale(.94); }
+  .pc-btn.del { font-size: 18px; color: var(--muted); }
+  .pc-btn.del:hover { color: var(--red); border-color: var(--red); }
+  .pc-error { font-size: 12px; color: var(--red); font-family: 'DM Mono', monospace; min-height: 18px; }
 
-  header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 18px 24px;
-    background: var(--surface);
-    border-bottom: 1px solid var(--border);
-    position: sticky;
-    top: 0;
-    z-index: 100;
-    flex-wrap: wrap;
-    gap: 10px;
-  }
-
-  .logo {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 26px;
-    letter-spacing: 2px;
-    color: var(--gold);
-    line-height: 1;
-  }
+  /* ── HEADER ── */
+  header { display: flex; align-items: center; justify-content: space-between; padding: 18px 24px; background: var(--surface); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100; flex-wrap: wrap; gap: 10px; }
+  .logo { font-family: 'Bebas Neue', sans-serif; font-size: 26px; letter-spacing: 2px; color: var(--gold); line-height: 1; }
   .logo span { color: var(--muted); font-size: 14px; font-family: 'DM Mono', monospace; display: block; letter-spacing: 1px; margin-top: 2px; }
-
   .header-controls { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
-
-  .stat-pill {
-    background: var(--pill);
-    border: 1px solid var(--border);
-    border-radius: 20px;
-    padding: 5px 12px;
-    font-size: 12px;
-    font-family: 'DM Mono', monospace;
-    color: var(--muted);
-  }
+  .stat-pill { background: var(--pill); border: 1px solid var(--border); border-radius: 20px; padding: 5px 12px; font-size: 12px; font-family: 'DM Mono', monospace; color: var(--muted); }
   .stat-pill b { color: var(--gold); }
+  .sync-indicator { font-size: 11px; font-family: 'DM Mono', monospace; padding: 4px 10px; border-radius: 20px; border: 1px solid var(--border); color: var(--muted); background: var(--pill); transition: all .3s; }
+  .sync-indicator.syncing { color: var(--gold); border-color: var(--gold2); animation: pulse 1s infinite; }
+  .sync-indicator.synced { color: var(--green); border-color: var(--green); }
+  .sync-indicator.error { color: var(--red); border-color: var(--red); }
+  @keyframes pulse { 0%,100%{opacity:.6}50%{opacity:1} }
 
-  .filters {
-    padding: 14px 24px;
-    display: flex;
-    gap: 10px;
-    align-items: center;
-    flex-wrap: wrap;
-    background: var(--surface);
-    border-bottom: 1px solid var(--border);
-  }
-
-  .filter-label {
-    font-size: 11px;
-    font-family: 'DM Mono', monospace;
-    color: var(--muted);
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    margin-right: 4px;
-  }
-
-  .chip {
-    background: var(--pill);
-    border: 1px solid var(--border);
-    color: var(--muted);
-    border-radius: 20px;
-    padding: 5px 14px;
-    font-size: 12px;
-    cursor: pointer;
-    transition: all .15s;
-    font-family: 'DM Sans', sans-serif;
-    font-weight: 500;
-    white-space: nowrap;
-  }
+  /* ── FILTERS ── */
+  .filters { padding: 14px 24px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; background: var(--surface); border-bottom: 1px solid var(--border); }
+  .filter-label { font-size: 11px; font-family: 'DM Mono', monospace; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-right: 4px; }
+  .chip { background: var(--pill); border: 1px solid var(--border); color: var(--muted); border-radius: 20px; padding: 5px 14px; font-size: 12px; cursor: pointer; transition: all .15s; font-family: 'DM Sans', sans-serif; font-weight: 500; white-space: nowrap; }
   .chip:hover { border-color: var(--gold); color: var(--gold); }
   .chip.active { background: var(--gold); border-color: var(--gold); color: #000; }
-
-  .search-box {
-    margin-left: auto;
-    background: var(--pill);
-    border: 1px solid var(--border);
-    border-radius: 20px;
-    padding: 6px 14px;
-    font-size: 13px;
-    color: var(--text);
-    font-family: 'DM Sans', sans-serif;
-    outline: none;
-    width: 180px;
-    transition: border-color .15s;
-  }
+  .search-box { margin-left: auto; background: var(--pill); border: 1px solid var(--border); border-radius: 20px; padding: 6px 14px; font-size: 13px; color: var(--text); font-family: 'DM Sans', sans-serif; outline: none; width: 180px; transition: border-color .15s; }
   .search-box::placeholder { color: var(--muted); }
   .search-box:focus { border-color: var(--gold); }
+  .gen-tabs { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 2px; scrollbar-width: none; }
+  .gen-tabs::-webkit-scrollbar { display: none; }
 
-  .grid-container {
-    padding: 24px;
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
-    gap: 12px;
-  }
-
-  .dex-slot {
-    background: var(--surface);
-    border: 1.5px solid var(--border);
-    border-radius: 10px;
-    cursor: pointer;
-    transition: all .18s;
-    overflow: hidden;
-    position: relative;
-    aspect-ratio: 2/3;
-    display: flex;
-    flex-direction: column;
-  }
+  /* ── GRID ── */
+  .grid-container { padding: 24px; display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 12px; }
+  .dex-slot { background: var(--surface); border: 1.5px solid var(--border); border-radius: 10px; cursor: pointer; transition: all .18s; overflow: hidden; position: relative; aspect-ratio: 2/3; display: flex; flex-direction: column; }
   .dex-slot:hover { border-color: var(--gold); transform: translateY(-2px); box-shadow: 0 8px 24px rgba(245,200,66,0.12); }
   .dex-slot.owned { border-color: var(--gold2); }
   .dex-slot.wishlist { border-color: var(--blue); }
   .dex-slot.owned:hover { border-color: var(--gold); }
   .dex-slot.wishlist:hover { border-color: #7de8ff; }
-
-  .slot-img {
-    width: 100%;
-    flex: 1;
-    object-fit: cover;
-    object-position: top center;
-    display: block;
-    background: var(--surface2);
-    /* FIX: prevent broken image icon flash */
-    min-height: 0;
-  }
-  .slot-img.errored { display: none; }
-
-  .slot-placeholder {
-    flex: 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 28px;
-    opacity: .15;
-    background: var(--surface2);
-  }
-
-  .slot-footer {
-    padding: 6px 7px 5px;
-    background: var(--surface);
-    border-top: 1px solid var(--border);
-    flex-shrink: 0;
-  }
+  .slot-img { width: 100%; flex: 1; object-fit: cover; object-position: top center; display: block; background: var(--surface2); min-height: 0; }
+  .slot-placeholder { flex: 1; display: flex; align-items: center; justify-content: center; font-size: 28px; opacity: .15; background: var(--surface2); }
+  .slot-footer { padding: 6px 7px 5px; background: var(--surface); border-top: 1px solid var(--border); flex-shrink: 0; }
   .slot-num { font-family: 'DM Mono', monospace; font-size: 9px; color: var(--muted); line-height: 1; }
   .slot-name { font-size: 10px; font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.3; margin-top: 1px; }
   .slot-name.empty { color: var(--muted); font-weight: 400; }
-
   .status-dot { position: absolute; top: 6px; right: 6px; width: 7px; height: 7px; border-radius: 50%; }
   .status-dot.owned { background: var(--gold); }
   .status-dot.wishlist { background: var(--blue); }
+  .no-results-msg { grid-column: 1/-1; text-align: center; padding: 60px 20px; color: var(--muted); font-size: 14px; }
 
-  /* MODAL */
-  .overlay {
-    display: none;
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,.75);
-    z-index: 200;
-    align-items: center;
-    justify-content: center;
-    padding: 16px;
-    backdrop-filter: blur(4px);
-  }
+  /* ── SLOT MODAL ── */
+  .overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.75); z-index: 200; align-items: center; justify-content: center; padding: 16px; backdrop-filter: blur(4px); }
   .overlay.open { display: flex; }
-
-  .modal {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 16px;
-    width: 100%;
-    max-width: 680px;
-    max-height: 90vh;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-    animation: slideUp .2s ease;
-  }
-  @keyframes slideUp {
-    from { transform: translateY(20px); opacity: 0; }
-    to { transform: translateY(0); opacity: 1; }
-  }
-
-  .modal-header {
-    padding: 18px 20px 14px;
-    border-bottom: 1px solid var(--border);
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    flex-shrink: 0;
-  }
+  .modal { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; width: 100%; max-width: 680px; max-height: 90vh; display: flex; flex-direction: column; overflow: hidden; animation: slideUp .2s ease; }
+  @keyframes slideUp { from{transform:translateY(20px);opacity:0} to{transform:translateY(0);opacity:1} }
+  .modal-header { padding: 18px 20px 14px; border-bottom: 1px solid var(--border); display: flex; align-items: flex-start; justify-content: space-between; flex-shrink: 0; }
   .modal-title { font-family: 'Bebas Neue', sans-serif; font-size: 22px; letter-spacing: 1px; color: var(--gold); line-height: 1; }
   .modal-sub { font-size: 12px; color: var(--muted); margin-top: 3px; font-family: 'DM Mono', monospace; }
-
-  .close-btn {
-    background: none; border: none; color: var(--muted); font-size: 22px;
-    cursor: pointer; line-height: 1; padding: 2px 6px; border-radius: 6px; transition: color .1s;
-    /* FIX: make tap target bigger on mobile */
-    min-width: 36px; min-height: 36px; display: flex; align-items: center; justify-content: center;
-  }
+  .close-btn { background: none; border: none; color: var(--muted); font-size: 22px; cursor: pointer; border-radius: 6px; transition: color .1s; min-width: 36px; min-height: 36px; display: flex; align-items: center; justify-content: center; }
   .close-btn:hover { color: var(--text); }
-
-  .current-card {
-    padding: 14px 20px;
-    border-bottom: 1px solid var(--border);
-    display: flex;
-    gap: 14px;
-    align-items: center;
-    flex-shrink: 0;
-    background: var(--surface2);
-    flex-wrap: wrap;
-  }
+  .current-card { padding: 14px 20px; border-bottom: 1px solid var(--border); display: flex; gap: 14px; align-items: center; flex-shrink: 0; background: var(--surface2); flex-wrap: wrap; }
   .current-thumb { width: 52px; height: 72px; object-fit: cover; object-position: top; border-radius: 5px; border: 1px solid var(--border); background: var(--surface); flex-shrink: 0; }
   .current-thumb-empty { width: 52px; height: 72px; border-radius: 5px; border: 1px dashed var(--border); background: var(--surface); display: flex; align-items: center; justify-content: center; font-size: 20px; opacity: .4; flex-shrink: 0; }
   .current-info { flex: 1; min-width: 0; }
@@ -249,34 +105,25 @@
   .current-status.owned { color: var(--gold); border-color: var(--gold2); background: rgba(245,200,66,.08); }
   .current-status.wishlist { color: var(--blue); border-color: var(--blue); background: rgba(76,201,240,.08); }
   .current-status.empty { color: var(--muted); border-color: var(--border); }
-
   .clear-btn { background: none; border: 1px solid var(--border); color: var(--muted); font-size: 11px; cursor: pointer; padding: 4px 10px; border-radius: 20px; transition: all .15s; font-family: 'DM Sans', sans-serif; white-space: nowrap; }
   .clear-btn:hover { border-color: var(--red); color: var(--red); }
-
   .modal-search-bar { padding: 12px 20px; border-bottom: 1px solid var(--border); display: flex; gap: 8px; flex-shrink: 0; }
   .modal-search-input { flex: 1; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 9px 14px; font-size: 13px; color: var(--text); font-family: 'DM Sans', sans-serif; outline: none; transition: border-color .15s; min-width: 0; }
   .modal-search-input:focus { border-color: var(--gold); }
   .modal-search-input::placeholder { color: var(--muted); }
-
   .search-btn { background: var(--gold); border: none; border-radius: 8px; padding: 9px 18px; font-size: 13px; font-weight: 600; color: #000; cursor: pointer; font-family: 'DM Sans', sans-serif; transition: background .15s; white-space: nowrap; }
   .search-btn:hover { background: var(--gold2); }
   .search-btn:disabled { opacity: .5; cursor: not-allowed; }
-
   .pkmn-link-row { display: flex; gap: 8px; align-items: center; padding: 8px 20px; flex-shrink: 0; border-bottom: 1px solid var(--border); }
   .pkmn-link-label { font-size: 10px; color: var(--muted); font-family: 'DM Mono', monospace; white-space: nowrap; }
   .pkmn-link-input { flex: 1; background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; padding: 6px 10px; font-size: 11px; color: var(--text); font-family: 'DM Mono', monospace; outline: none; min-width: 0; }
   .pkmn-link-input:focus { border-color: var(--gold); }
   .pkmn-link-input::placeholder { color: var(--muted); }
-
   .modal-body { flex: 1; overflow-y: auto; padding: 14px 20px; min-height: 0; }
   .modal-body::-webkit-scrollbar { width: 5px; }
-  .modal-body::-webkit-scrollbar-track { background: transparent; }
   .modal-body::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
-
   .results-label { font-size: 11px; font-family: 'DM Mono', monospace; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; }
-
   .results-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 10px; }
-
   .result-card { background: var(--surface2); border: 1.5px solid var(--border); border-radius: 8px; overflow: hidden; cursor: pointer; transition: all .15s; }
   .result-card:hover { border-color: var(--gold); transform: translateY(-2px); box-shadow: 0 6px 18px rgba(245,200,66,.15); }
   .result-card img { width: 100%; display: block; aspect-ratio: 2.5/3.5; object-fit: cover; object-position: top; background: var(--surface); }
@@ -284,37 +131,17 @@
   .result-card-name { font-size: 9px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text); }
   .result-card-set { font-size: 8px; color: var(--muted); font-family: 'DM Mono', monospace; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 1px; }
   .result-card-rarity { font-size: 8px; color: var(--gold); margin-top: 2px; }
-
   .loading-msg, .empty-msg, .error-msg { text-align: center; padding: 40px 20px; color: var(--muted); font-size: 13px; }
   .loading-msg { animation: pulse 1.2s infinite; }
-  @keyframes pulse { 0%,100% { opacity:.6; } 50% { opacity:1; } }
   .error-msg { color: var(--red); }
 
-  /* PICK MODAL */
+  /* ── PICK MODAL ── */
   .pick-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.85); z-index: 300; align-items: center; justify-content: center; padding: 16px; backdrop-filter: blur(6px); }
   .pick-overlay.open { display: flex; }
-
-  .pick-modal {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 16px;
-    width: 100%;
-    max-width: 400px;
-    /* FIX: allow scroll if screen is short */
-    max-height: 90vh;
-    overflow-y: auto;
-    animation: slideUp .2s ease;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding: 24px 20px;
-    gap: 16px;
-  }
-
+  .pick-modal { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; width: 100%; max-width: 400px; max-height: 90vh; overflow-y: auto; animation: slideUp .2s ease; display: flex; flex-direction: column; align-items: center; padding: 24px 20px; gap: 16px; }
   .pick-card-img { width: 180px; border-radius: 10px; box-shadow: 0 12px 40px rgba(0,0,0,.5); }
   .pick-card-name { font-family: 'Bebas Neue', sans-serif; font-size: 22px; letter-spacing: 1px; color: var(--gold); text-align: center; }
   .pick-card-sub { font-size: 12px; color: var(--muted); text-align: center; margin-top: -10px; font-family: 'DM Mono', monospace; }
-
   .pick-actions { display: flex; gap: 10px; width: 100%; flex-direction: column; }
   .pick-btn { width: 100%; padding: 12px; border: none; border-radius: 9px; font-size: 14px; font-weight: 600; cursor: pointer; font-family: 'DM Sans', sans-serif; transition: all .15s; }
   .pick-btn.owned-btn { background: var(--gold); color: #000; }
@@ -324,14 +151,13 @@
   .pick-btn.cancel-btn { background: none; color: var(--muted); border: 1px solid var(--border); }
   .pick-btn.cancel-btn:hover { color: var(--text); border-color: var(--muted); }
 
-  .gen-tabs { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 2px; scrollbar-width: none; }
-  .gen-tabs::-webkit-scrollbar { display: none; }
-
+  /* ── TOAST ── */
   .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(80px); background: var(--gold); color: #000; font-weight: 600; font-size: 13px; padding: 10px 22px; border-radius: 30px; z-index: 999; transition: transform .3s cubic-bezier(.34,1.56,.64,1); pointer-events: none; white-space: nowrap; }
   .toast.show { transform: translateX(-50%) translateY(0); }
 
-  /* empty state when filter shows nothing */
-  .no-results-msg { grid-column: 1/-1; text-align: center; padding: 60px 20px; color: var(--muted); font-size: 14px; }
+  /* ── BACKUP BUTTON ── */
+  .backup-btn { background: none; border: 1px solid var(--border); color: var(--muted); font-size: 11px; cursor: pointer; padding: 5px 12px; border-radius: 20px; font-family: 'DM Mono', monospace; transition: all .15s; }
+  .backup-btn:hover { border-color: var(--blue); color: var(--blue); }
 
   @media (max-width: 520px) {
     .grid-container { grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); gap: 8px; padding: 16px; }
@@ -339,10 +165,42 @@
     .modal { max-height: 95vh; }
     .results-grid { grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); }
     .search-box { width: 130px; }
+    .pc-grid { grid-template-columns: repeat(3, 64px); gap: 10px; }
+    .pc-btn { height: 64px; font-size: 20px; }
   }
 </style>
 </head>
 <body>
+
+<!-- PASSCODE SCREEN -->
+<div id="passcodeScreen">
+  <div class="pc-logo">Pokédex Binder</div>
+  <div class="pc-sub">MATT'S COLLECTION</div>
+  <div class="pc-dots">
+    <div class="pc-dot" id="dot0"></div>
+    <div class="pc-dot" id="dot1"></div>
+    <div class="pc-dot" id="dot2"></div>
+    <div class="pc-dot" id="dot3"></div>
+  </div>
+  <div class="pc-error" id="pcError"></div>
+  <div class="pc-grid">
+    <button class="pc-btn" data-digit="1">1</button>
+    <button class="pc-btn" data-digit="2">2</button>
+    <button class="pc-btn" data-digit="3">3</button>
+    <button class="pc-btn" data-digit="4">4</button>
+    <button class="pc-btn" data-digit="5">5</button>
+    <button class="pc-btn" data-digit="6">6</button>
+    <button class="pc-btn" data-digit="7">7</button>
+    <button class="pc-btn" data-digit="8">8</button>
+    <button class="pc-btn" data-digit="9">9</button>
+    <button class="pc-btn del" id="pcClear">⌫</button>
+    <button class="pc-btn" data-digit="0">0</button>
+    <div></div>
+  </div>
+</div>
+
+<!-- MAIN APP -->
+<div id="appRoot" style="display:none">
 
 <header>
   <div>
@@ -352,6 +210,8 @@
     <div class="stat-pill">Owned: <b id="ownedCount">0</b></div>
     <div class="stat-pill">Wishlist: <b id="wishCount">0</b></div>
     <div class="stat-pill">Total: <b id="totalCount">0</b> / 1025</div>
+    <div class="sync-indicator" id="syncStatus">○ offline</div>
+    <button class="backup-btn" id="backupBtn">↓ backup</button>
   </div>
 </header>
 
@@ -374,34 +234,30 @@
     <div class="modal-header">
       <div>
         <div class="modal-title" id="modalTitle">Choose a Card</div>
-        <div class="modal-sub" id="modalSub">#0000 — Pokémon Name</div>
+        <div class="modal-sub" id="modalSub">#0000</div>
       </div>
       <button class="close-btn" id="closeSlotModal" aria-label="Close">✕</button>
     </div>
-
     <div class="current-card" id="currentCardRow"></div>
-
     <div class="modal-search-bar">
-      <input class="modal-search-input" id="modalSearchInput" type="text" placeholder="Search by card or Pokémon name…">
+      <input class="modal-search-input" id="modalSearchInput" type="text" placeholder="Search by Pokémon or card name…">
       <button class="search-btn" id="modalSearchBtn">Search</button>
     </div>
-
     <div class="pkmn-link-row">
       <span class="pkmn-link-label">pkmn.gg ref:</span>
       <input class="pkmn-link-input" id="pkmnLinkInput" type="text" placeholder="https://www.pkmn.gg/cards/...">
     </div>
-
     <div class="modal-body">
       <div id="resultsLabel" class="results-label"></div>
       <div id="resultsGrid" class="results-grid"></div>
       <div id="loadingMsg" class="loading-msg" style="display:none">Searching cards…</div>
-      <div id="emptyMsg" class="empty-msg" style="display:none">No results found. Try a different search.</div>
+      <div id="emptyMsg" class="empty-msg" style="display:none">No results. Try a different search.</div>
       <div id="errorMsg" class="error-msg" style="display:none"></div>
     </div>
   </div>
 </div>
 
-<!-- PICK CONFIRM MODAL -->
+<!-- PICK MODAL -->
 <div class="pick-overlay" id="pickOverlay" role="dialog" aria-modal="true">
   <div class="pick-modal">
     <img id="pickImg" class="pick-card-img" src="" alt="Selected card">
@@ -417,10 +273,72 @@
   </div>
 </div>
 
+</div><!-- end appRoot -->
+
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-<script>
+<!-- Firebase SDKs -->
+<script type="module">
 'use strict';
+
+import { initializeApp }                          from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import { getFirestore, doc, getDoc, setDoc,
+         onSnapshot }                             from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+
+// ── FIREBASE CONFIG ──────────────────────────────────────────────────────────
+const firebaseConfig = {
+  apiKey:            "AIzaSyBYiX2_U3HWlyESVlO9bP1MnwFdnc6EAIo",
+  authDomain:        "pokedex-binder.firebaseapp.com",
+  projectId:         "pokedex-binder",
+  storageBucket:     "pokedex-binder.firebasestorage.app",
+  messagingSenderId: "231080069939",
+  appId:             "1:231080069939:web:44377eb43399fac14ccc46",
+  measurementId:     "G-639S8HL541"
+};
+
+const fbApp = initializeApp(firebaseConfig);
+const db    = getFirestore(fbApp);
+const DOC   = doc(db, 'collection', 'matt');
+
+// ── PASSCODE ─────────────────────────────────────────────────────────────────
+const PASSCODE = '1109';
+let pcInput = '';
+
+function updateDots(error = false) {
+  for (let i = 0; i < 4; i++) {
+    const d = document.getElementById(`dot${i}`);
+    d.className = 'pc-dot' + (i < pcInput.length ? (error ? ' error' : ' filled') : '');
+  }
+}
+
+document.querySelectorAll('.pc-btn[data-digit]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    if (pcInput.length >= 4) return;
+    pcInput += btn.dataset.digit;
+    updateDots();
+    if (pcInput.length === 4) {
+      if (pcInput === PASSCODE) {
+        document.getElementById('passcodeScreen').classList.add('hidden');
+        document.getElementById('appRoot').style.display = 'block';
+        initApp();
+      } else {
+        updateDots(true);
+        document.getElementById('pcError').textContent = 'Incorrect PIN';
+        setTimeout(() => {
+          pcInput = '';
+          updateDots();
+          document.getElementById('pcError').textContent = '';
+        }, 800);
+      }
+    }
+  });
+});
+
+document.getElementById('pcClear').addEventListener('click', () => {
+  pcInput = pcInput.slice(0, -1);
+  updateDots();
+  document.getElementById('pcError').textContent = '';
+});
 
 // ── POKÉMON DATA ──────────────────────────────────────────────────────────────
 const POKEMON = [
@@ -554,8 +472,7 @@ const POKEMON = [
   [629,"Vullaby"],[630,"Mandibuzz"],[631,"Heatmor"],[632,"Durant"],[633,"Deino"],
   [634,"Zweilous"],[635,"Hydreigon"],[636,"Larvesta"],[637,"Volcarona"],[638,"Cobalion"],
   [639,"Terrakion"],[640,"Virizion"],[641,"Tornadus"],[642,"Thundurus"],[643,"Reshiram"],
-  [644,"Zekrom"],[645,"Landorus"],[646,"Kyurem"],[647,"Keldeo"],[648,"Meloetta"],
-  [649,"Genesect"],
+  [644,"Zekrom"],[645,"Landorus"],[646,"Kyurem"],[647,"Keldeo"],[648,"Meloetta"],[649,"Genesect"],
   [650,"Chespin"],[651,"Quilladin"],[652,"Chesnaught"],[653,"Fennekin"],[654,"Braixen"],
   [655,"Delphox"],[656,"Froakie"],[657,"Frogadier"],[658,"Greninja"],[659,"Bunnelby"],
   [660,"Diggersby"],[661,"Fletchling"],[662,"Fletchinder"],[663,"Talonflame"],[664,"Scatterbug"],
@@ -607,8 +524,7 @@ const POKEMON = [
   [885,"Dreepy"],[886,"Drakloak"],[887,"Dragapult"],[888,"Zacian"],[889,"Zamazenta"],
   [890,"Eternatus"],[891,"Kubfu"],[892,"Urshifu"],[893,"Zarude"],[894,"Regieleki"],
   [895,"Regidrago"],[896,"Glastrier"],[897,"Spectrier"],[898,"Calyrex"],[899,"Wyrdeer"],
-  [900,"Kleavor"],[901,"Ursaluna"],[902,"Basculegion"],[903,"Sneasler"],[904,"Overqwil"],
-  [905,"Enamorus"],
+  [900,"Kleavor"],[901,"Ursaluna"],[902,"Basculegion"],[903,"Sneasler"],[904,"Overqwil"],[905,"Enamorus"],
   [906,"Sprigatito"],[907,"Floragato"],[908,"Meowscarada"],[909,"Fuecoco"],[910,"Crocalor"],
   [911,"Skeledirge"],[912,"Quaxly"],[913,"Quaxwell"],[914,"Quaquaval"],[915,"Lechonk"],
   [916,"Oinkologne"],[917,"Tarountula"],[918,"Spidops"],[919,"Nymble"],[920,"Lokix"],
@@ -636,15 +552,11 @@ const POKEMON = [
 ];
 
 const GEN_RANGES = [
-  { label:'Gen 1', min:1,   max:151  },
-  { label:'Gen 2', min:152, max:251  },
-  { label:'Gen 3', min:252, max:386  },
-  { label:'Gen 4', min:387, max:493  },
-  { label:'Gen 5', min:494, max:649  },
-  { label:'Gen 6', min:650, max:721  },
-  { label:'Gen 7', min:722, max:809  },
-  { label:'Gen 8', min:810, max:905  },
-  { label:'Gen 9', min:906, max:1025 },
+  {label:'Gen 1',min:1,max:151},{label:'Gen 2',min:152,max:251},
+  {label:'Gen 3',min:252,max:386},{label:'Gen 4',min:387,max:493},
+  {label:'Gen 5',min:494,max:649},{label:'Gen 6',min:650,max:721},
+  {label:'Gen 7',min:722,max:809},{label:'Gen 8',min:810,max:905},
+  {label:'Gen 9',min:906,max:1025},
 ];
 
 const API_KEY = '6d487770-b1cd-478b-8f4f-d2868ceb3095';
@@ -656,23 +568,89 @@ let activeGen = 0;
 let nameFilter = '';
 let currentSlot = null;
 let pickedCard = null;
-// FIX: track in-flight search to prevent race conditions
 let searchController = null;
+let saveTimer = null;
 
-function loadCollection() {
-  try { collection = JSON.parse(localStorage.getItem('pokedex_binder') || '{}'); }
-  catch(e) { collection = {}; }
+// ── SYNC STATUS ───────────────────────────────────────────────────────────────
+function setSyncStatus(state, text) {
+  const el = document.getElementById('syncStatus');
+  el.className = `sync-indicator ${state}`;
+  el.textContent = text;
 }
-function saveCollection() {
-  try { localStorage.setItem('pokedex_binder', JSON.stringify(collection)); }
-  catch(e) { showToast('⚠ Storage full — oldest data may be lost'); }
+
+// ── FIREBASE LOAD & SAVE ──────────────────────────────────────────────────────
+async function loadFromFirebase() {
+  try {
+    setSyncStatus('syncing', '↻ loading…');
+    const snap = await getDoc(DOC);
+    if (snap.exists()) {
+      collection = snap.data().cards || {};
+    }
+    setSyncStatus('synced', '✓ synced');
+    renderGrid();
+  } catch(e) {
+    setSyncStatus('error', '✗ offline');
+    // fall back to localStorage
+    try { collection = JSON.parse(localStorage.getItem('pokedex_binder') || '{}'); } catch(_){}
+    renderGrid();
+  }
+}
+
+async function saveToFirebase() {
+  try {
+    setSyncStatus('syncing', '↻ saving…');
+    await setDoc(DOC, { cards: collection, updatedAt: Date.now() });
+    // also keep localStorage as local backup
+    localStorage.setItem('pokedex_binder', JSON.stringify(collection));
+    setSyncStatus('synced', '✓ synced');
+  } catch(e) {
+    setSyncStatus('error', '✗ save failed');
+    // still save locally
+    try { localStorage.setItem('pokedex_binder', JSON.stringify(collection)); } catch(_){}
+  }
+}
+
+// Debounce saves so rapid changes don't hammer Firestore
+function scheduleSave() {
+  if (saveTimer) clearTimeout(saveTimer);
+  saveTimer = setTimeout(() => saveToFirebase(), 1200);
+}
+
+// Real-time listener — updates if another device saves
+function startRealtimeSync() {
+  onSnapshot(DOC, snap => {
+    if (snap.exists()) {
+      const remote = snap.data().cards || {};
+      // Only update if remote is newer (avoid overwriting mid-edit)
+      if (!saveTimer) {
+        collection = remote;
+        renderGrid();
+        setSyncStatus('synced', '✓ synced');
+      }
+    }
+  }, () => { setSyncStatus('error', '✗ offline'); });
+}
+
+// ── BACKUP DOWNLOAD ───────────────────────────────────────────────────────────
+document.getElementById('backupBtn').addEventListener('click', () => {
+  const blob = new Blob([JSON.stringify(collection, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `pokedex-backup-${new Date().toISOString().slice(0,10)}.json`;
+  a.click();
+  showToast('↓ Backup downloaded!');
+});
+
+// ── HELPERS ───────────────────────────────────────────────────────────────────
+function escHtml(str) {
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
 // ── STATS & GRID ──────────────────────────────────────────────────────────────
 function updateStats() {
   const vals = Object.values(collection);
-  document.getElementById('ownedCount').textContent = vals.filter(c => c.status === 'owned').length;
-  document.getElementById('wishCount').textContent  = vals.filter(c => c.status === 'wishlist').length;
+  document.getElementById('ownedCount').textContent = vals.filter(c=>c.status==='owned').length;
+  document.getElementById('wishCount').textContent  = vals.filter(c=>c.status==='wishlist').length;
   document.getElementById('totalCount').textContent = vals.length;
 }
 
@@ -681,16 +659,13 @@ function renderGrid() {
   grid.innerHTML = '';
   const lc = nameFilter.toLowerCase();
 
-  const visible = POKEMON.filter(([num, name]) => {
-    if (activeGen > 0) {
-      const g = GEN_RANGES[activeGen - 1];
-      if (num < g.min || num > g.max) return false;
-    }
+  const visible = POKEMON.filter(([num,name]) => {
+    if (activeGen > 0) { const g=GEN_RANGES[activeGen-1]; if(num<g.min||num>g.max) return false; }
     if (nameFilter && !name.toLowerCase().includes(lc) && !String(num).includes(nameFilter)) return false;
-    const status = collection[num] ? collection[num].status : 'empty';
-    if (activeFilter === 'owned'    && status !== 'owned')    return false;
-    if (activeFilter === 'wishlist' && status !== 'wishlist') return false;
-    if (activeFilter === 'empty'    && status !== 'empty')    return false;
+    const status = collection[num]?.status || 'empty';
+    if (activeFilter==='owned'    && status!=='owned')    return false;
+    if (activeFilter==='wishlist' && status!=='wishlist') return false;
+    if (activeFilter==='empty'    && status!=='empty')    return false;
     return true;
   });
 
@@ -699,81 +674,57 @@ function renderGrid() {
     msg.className = 'no-results-msg';
     msg.textContent = 'No Pokémon match your current filters.';
     grid.appendChild(msg);
-    updateStats();
-    return;
+    updateStats(); return;
   }
 
-  visible.forEach(([num, name]) => {
+  visible.forEach(([num,name]) => {
     const entry  = collection[num];
-    const status = entry ? entry.status : 'empty';
+    const status = entry?.status || 'empty';
     const slot   = document.createElement('div');
     slot.className = `dex-slot ${status}`;
 
-    // FIX: use img with onerror fallback instead of relying on broken image display
-    let imgHTML;
-    if (entry && entry.img) {
-      imgHTML = `<img class="slot-img" src="${entry.img}" alt="${escHtml(entry.name || name)}" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
-                 <div class="slot-placeholder" style="display:none">◆</div>`;
-    } else {
-      imgHTML = `<div class="slot-placeholder">◆</div>`;
-    }
+    let imgHTML = entry?.img
+      ? `<img class="slot-img" src="${escHtml(entry.img)}" alt="${escHtml(entry.name||name)}" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+         <div class="slot-placeholder" style="display:none">◆</div>`
+      : `<div class="slot-placeholder">◆</div>`;
 
-    const dotHTML = status !== 'empty' ? `<div class="status-dot ${status}"></div>` : '';
+    const dotHTML = status!=='empty' ? `<div class="status-dot ${status}"></div>` : '';
 
-    slot.innerHTML = `
-      ${imgHTML}
-      ${dotHTML}
+    slot.innerHTML = `${imgHTML}${dotHTML}
       <div class="slot-footer">
         <div class="slot-num">#${String(num).padStart(4,'0')}</div>
-        <div class="slot-name ${status === 'empty' ? 'empty' : ''}">${escHtml(entry ? (entry.name || name) : name)}</div>
+        <div class="slot-name ${status==='empty'?'empty':''}">${escHtml(entry?(entry.name||name):name)}</div>
       </div>`;
 
     slot.addEventListener('click', () => openSlotModal(num, name));
     grid.appendChild(slot);
   });
-
   updateStats();
-}
-
-// ── HELPERS ───────────────────────────────────────────────────────────────────
-// FIX: escape user-derived content before injecting into innerHTML
-function escHtml(str) {
-  return String(str)
-    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
-    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
 // ── GEN TABS ──────────────────────────────────────────────────────────────────
 function buildGenTabs() {
   const tabs = document.getElementById('genTabs');
-  const allChip = document.createElement('button');
-  allChip.className = 'chip active';
-  allChip.textContent = 'All';
-  allChip.dataset.gen = '0';
-  tabs.appendChild(allChip);
-
-  GEN_RANGES.forEach((g, i) => {
-    const chip = document.createElement('button');
-    chip.className = 'chip';
-    chip.textContent = g.label;
-    chip.dataset.gen = String(i + 1);
-    tabs.appendChild(chip);
+  const all  = document.createElement('button');
+  all.className = 'chip active'; all.textContent = 'All'; all.dataset.gen = '0';
+  tabs.appendChild(all);
+  GEN_RANGES.forEach((g,i) => {
+    const c = document.createElement('button');
+    c.className='chip'; c.textContent=g.label; c.dataset.gen=String(i+1);
+    tabs.appendChild(c);
   });
-
   tabs.addEventListener('click', e => {
-    const btn = e.target.closest('.chip[data-gen]');
-    if (!btn) return;
-    tabs.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+    const btn = e.target.closest('.chip[data-gen]'); if(!btn) return;
+    tabs.querySelectorAll('.chip').forEach(c=>c.classList.remove('active'));
     btn.classList.add('active');
-    activeGen = parseInt(btn.dataset.gen, 10);
+    activeGen = parseInt(btn.dataset.gen,10);
     renderGrid();
   });
 }
 
-// ── STATUS/FILTER CHIPS ───────────────────────────────────────────────────────
 document.querySelectorAll('[data-filter]').forEach(btn => {
   btn.addEventListener('click', () => {
-    document.querySelectorAll('[data-filter]').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('[data-filter]').forEach(b=>b.classList.remove('active'));
     btn.classList.add('active');
     activeFilter = btn.dataset.filter;
     renderGrid();
@@ -781,52 +732,45 @@ document.querySelectorAll('[data-filter]').forEach(btn => {
 });
 
 document.getElementById('nameSearch').addEventListener('input', e => {
-  nameFilter = e.target.value.trim();
-  renderGrid();
+  nameFilter = e.target.value.trim(); renderGrid();
 });
 
 // ── SLOT MODAL ────────────────────────────────────────────────────────────────
 function openSlotModal(num, name) {
-  currentSlot = { num, name };
+  currentSlot = {num,name};
   document.getElementById('modalTitle').textContent = name;
   document.getElementById('modalSub').textContent = `#${String(num).padStart(4,'0')} · Tap a card to assign it`;
   renderCurrentCard();
   clearSearchUI();
-  document.getElementById('pkmnLinkInput').value = collection[num]?.pkmnLink || '';
+  document.getElementById('pkmnLinkInput').value = collection[num]?.pkmnLink||'';
   document.getElementById('modalSearchInput').value = name;
   document.getElementById('slotOverlay').classList.add('open');
   searchCards(name);
 }
 
 function clearSearchUI() {
-  document.getElementById('resultsLabel').textContent = '';
-  document.getElementById('resultsGrid').innerHTML = '';
-  document.getElementById('loadingMsg').style.display = 'none';
-  document.getElementById('emptyMsg').style.display   = 'none';
-  document.getElementById('errorMsg').style.display   = 'none';
+  document.getElementById('resultsLabel').textContent='';
+  document.getElementById('resultsGrid').innerHTML='';
+  document.getElementById('loadingMsg').style.display='none';
+  document.getElementById('emptyMsg').style.display='none';
+  document.getElementById('errorMsg').style.display='none';
 }
 
 function renderCurrentCard() {
   const row   = document.getElementById('currentCardRow');
   const entry = collection[currentSlot.num];
   if (!entry) {
-    row.innerHTML = `
-      <div class="current-thumb-empty">◆</div>
-      <div class="current-info">
-        <div class="current-label">Current Card</div>
-        <div class="current-card-name">${escHtml(currentSlot.name)}</div>
-        <div class="current-set">No card assigned yet</div>
-      </div>
+    row.innerHTML=`<div class="current-thumb-empty">◆</div>
+      <div class="current-info"><div class="current-label">Current Card</div>
+      <div class="current-card-name">${escHtml(currentSlot.name)}</div>
+      <div class="current-set">No card assigned yet</div></div>
       <div class="current-status empty">Empty</div>`;
   } else {
-    row.innerHTML = `
-      <img class="current-thumb" src="${escHtml(entry.img)}" alt="${escHtml(entry.name)}" onerror="this.style.opacity='.3'">
-      <div class="current-info">
-        <div class="current-label">Current Card</div>
-        <div class="current-card-name">${escHtml(entry.name)}</div>
-        <div class="current-set">${escHtml(entry.set || '')} · ${escHtml(entry.rarity || '')}</div>
-      </div>
-      <div class="current-status ${entry.status}">${entry.status === 'owned' ? '✓ Owned' : '☆ Wishlist'}</div>
+    row.innerHTML=`<img class="current-thumb" src="${escHtml(entry.img)}" alt="${escHtml(entry.name)}" onerror="this.style.opacity='.3'">
+      <div class="current-info"><div class="current-label">Current Card</div>
+      <div class="current-card-name">${escHtml(entry.name)}</div>
+      <div class="current-set">${escHtml(entry.set||'')} · ${escHtml(entry.rarity||'')}</div></div>
+      <div class="current-status ${entry.status}">${entry.status==='owned'?'✓ Owned':'☆ Wishlist'}</div>
       <button class="clear-btn" id="clearSlotBtn">Remove</button>`;
     document.getElementById('clearSlotBtn').addEventListener('click', clearSlot);
   }
@@ -835,27 +779,22 @@ function renderCurrentCard() {
 function clearSlot() {
   const name = currentSlot.name;
   delete collection[currentSlot.num];
-  saveCollection();
-  renderCurrentCard();
-  renderGrid();
+  scheduleSave(); renderCurrentCard(); renderGrid();
   showToast(`${name} slot cleared`);
 }
 
 function closeSlotModal() {
   document.getElementById('slotOverlay').classList.remove('open');
-  // FIX: abort any in-flight search when modal closes
-  if (searchController) { searchController.abort(); searchController = null; }
+  if (searchController) { searchController.abort(); searchController=null; }
 }
 
 document.getElementById('closeSlotModal').addEventListener('click', closeSlotModal);
 document.getElementById('slotOverlay').addEventListener('click', e => {
-  if (e.target === document.getElementById('slotOverlay')) closeSlotModal();
+  if (e.target===document.getElementById('slotOverlay')) closeSlotModal();
 });
 
-// ── KEYBOARD: close modals with Escape ────────────────────────────────────────
-// FIX: was missing — important for usability
 document.addEventListener('keydown', e => {
-  if (e.key === 'Escape') {
+  if (e.key==='Escape') {
     if (document.getElementById('pickOverlay').classList.contains('open')) {
       document.getElementById('pickOverlay').classList.remove('open');
     } else if (document.getElementById('slotOverlay').classList.contains('open')) {
@@ -867,167 +806,116 @@ document.addEventListener('keydown', e => {
 // ── CARD SEARCH ───────────────────────────────────────────────────────────────
 async function searchCards(query) {
   if (!query.trim()) return;
-
-  // FIX: cancel previous in-flight request
   if (searchController) searchController.abort();
   searchController = new AbortController();
-  const signal = searchController.signal;
+  const {signal} = searchController;
 
-  const loadEl  = document.getElementById('loadingMsg');
-  const emptyEl = document.getElementById('emptyMsg');
-  const errorEl = document.getElementById('errorMsg');
-  const gridEl  = document.getElementById('resultsGrid');
-  const labelEl = document.getElementById('resultsLabel');
-  const btn     = document.getElementById('modalSearchBtn');
+  const loadEl=document.getElementById('loadingMsg'),
+        emptyEl=document.getElementById('emptyMsg'),
+        errorEl=document.getElementById('errorMsg'),
+        gridEl=document.getElementById('resultsGrid'),
+        labelEl=document.getElementById('resultsLabel'),
+        btn=document.getElementById('modalSearchBtn');
 
-  loadEl.style.display  = 'block';
-  emptyEl.style.display = 'none';
-  errorEl.style.display = 'none';
-  gridEl.innerHTML      = '';
-  labelEl.textContent   = '';
-  btn.disabled          = true;
+  loadEl.style.display='block'; emptyEl.style.display='none';
+  errorEl.style.display='none'; gridEl.innerHTML=''; labelEl.textContent=''; btn.disabled=true;
 
   try {
-    // FIX: use exact name match syntax for more precise results
     const q   = encodeURIComponent(`name:"${query}"`);
-    const res = await fetch(
-      `https://api.pokemontcg.io/v2/cards?q=${q}&pageSize=50&orderBy=-set.releaseDate`,
-      { headers: { 'X-Api-Key': API_KEY }, signal }
-    );
-
-    // FIX: handle non-200 HTTP responses explicitly
-    if (!res.ok) {
-      throw new Error(`API error ${res.status}`);
-    }
-
+    const res = await fetch(`https://api.pokemontcg.io/v2/cards?q=${q}&pageSize=50&orderBy=-set.releaseDate`,
+      {headers:{'X-Api-Key':API_KEY}, signal});
+    if (!res.ok) throw new Error(`API ${res.status}`);
     const data = await res.json();
-    loadEl.style.display = 'none';
-    btn.disabled         = false;
-    searchController     = null;
+    loadEl.style.display='none'; btn.disabled=false; searchController=null;
 
-    if (!data.data || data.data.length === 0) {
-      // FIX: fall back to loose search if exact match returns nothing
-      const q2   = encodeURIComponent(`name:${query}*`);
-      const res2 = await fetch(
-        `https://api.pokemontcg.io/v2/cards?q=${q2}&pageSize=50&orderBy=-set.releaseDate`,
-        { headers: { 'X-Api-Key': API_KEY } }
-      );
-      const data2 = await res2.json();
-      if (!data2.data || data2.data.length === 0) {
-        emptyEl.style.display = 'block';
-        return;
-      }
-      renderCardResults(data2.data, gridEl, labelEl);
-      return;
+    if (!data.data||data.data.length===0) {
+      const q2  = encodeURIComponent(`name:${query}*`);
+      const r2  = await fetch(`https://api.pokemontcg.io/v2/cards?q=${q2}&pageSize=50&orderBy=-set.releaseDate`,
+        {headers:{'X-Api-Key':API_KEY}});
+      const d2  = await r2.json();
+      if (!d2.data||d2.data.length===0) { emptyEl.style.display='block'; return; }
+      renderCardResults(d2.data,gridEl,labelEl); return;
     }
-
-    renderCardResults(data.data, gridEl, labelEl);
-
+    renderCardResults(data.data,gridEl,labelEl);
   } catch(err) {
-    if (err.name === 'AbortError') return; // intentional cancel — don't show error
-    loadEl.style.display  = 'none';
-    btn.disabled          = false;
-    errorEl.style.display = 'block';
-    errorEl.textContent   = `Search failed: ${err.message}. Check your connection and try again.`;
+    if (err.name==='AbortError') return;
+    loadEl.style.display='none'; btn.disabled=false;
+    errorEl.style.display='block';
+    errorEl.textContent=`Search failed: ${err.message}. Check your connection.`;
   }
 }
 
-function renderCardResults(allCards, gridEl, labelEl) {
-  // filter out trainers (keep Mega if user searched for them explicitly)
-  let cards = allCards.filter(c => {
-    const sub = (c.subtypes || []).join(' ').toLowerCase();
-    return !sub.includes('trainer') && !sub.includes('supporter') && !sub.includes('item') && !sub.includes('stadium');
+function renderCardResults(allCards,gridEl,labelEl) {
+  let cards = allCards.filter(c=>{
+    const sub=(c.subtypes||[]).join(' ').toLowerCase();
+    return !sub.includes('trainer')&&!sub.includes('supporter')&&!sub.includes('item')&&!sub.includes('stadium');
   });
-  if (cards.length === 0) cards = allCards; // fallback
-
-  labelEl.textContent = `${cards.length} card${cards.length !== 1 ? 's' : ''} found — tap to select`;
-
-  cards.forEach(card => {
-    const imgSrc = card.images?.small;
-    if (!imgSrc) return; // FIX: skip cards with no image rather than showing blank tile
-
-    const el = document.createElement('div');
-    el.className = 'result-card';
-    el.innerHTML = `
-      <img src="${escHtml(imgSrc)}" alt="${escHtml(card.name)}" loading="lazy">
+  if (!cards.length) cards=allCards;
+  labelEl.textContent=`${cards.length} card${cards.length!==1?'s':''} found — tap to select`;
+  cards.forEach(card=>{
+    const imgSrc=card.images?.small; if(!imgSrc) return;
+    const el=document.createElement('div'); el.className='result-card';
+    el.innerHTML=`<img src="${escHtml(imgSrc)}" alt="${escHtml(card.name)}" loading="lazy">
       <div class="result-card-info">
         <div class="result-card-name">${escHtml(card.name)}</div>
-        <div class="result-card-set">${escHtml(card.set?.name || '')}</div>
-        <div class="result-card-rarity">${escHtml(card.rarity || '')}</div>
+        <div class="result-card-set">${escHtml(card.set?.name||'')}</div>
+        <div class="result-card-rarity">${escHtml(card.rarity||'')}</div>
       </div>`;
-    el.addEventListener('click', () => openPickModal(card));
+    el.addEventListener('click',()=>openPickModal(card));
     gridEl.appendChild(el);
   });
 }
 
-document.getElementById('modalSearchBtn').addEventListener('click', () => {
-  const q = document.getElementById('modalSearchInput').value.trim();
-  if (q) searchCards(q);
+document.getElementById('modalSearchBtn').addEventListener('click',()=>{
+  const q=document.getElementById('modalSearchInput').value.trim(); if(q) searchCards(q);
 });
-
-document.getElementById('modalSearchInput').addEventListener('keydown', e => {
-  if (e.key === 'Enter') {
-    const q = document.getElementById('modalSearchInput').value.trim();
-    if (q) searchCards(q);
-  }
+document.getElementById('modalSearchInput').addEventListener('keydown',e=>{
+  if(e.key==='Enter'){const q=document.getElementById('modalSearchInput').value.trim();if(q)searchCards(q);}
 });
 
 // ── PICK MODAL ────────────────────────────────────────────────────────────────
 function openPickModal(card) {
-  pickedCard = card;
-  document.getElementById('pickImg').src = card.images?.large || card.images?.small || '';
-  document.getElementById('pickName').textContent = card.name;
-  document.getElementById('pickSub').textContent  = `${card.set?.name || ''} · ${card.rarity || ''}`;
+  pickedCard=card;
+  document.getElementById('pickImg').src=card.images?.large||card.images?.small||'';
+  document.getElementById('pickName').textContent=card.name;
+  document.getElementById('pickSub').textContent=`${card.set?.name||''} · ${card.rarity||''}`;
   document.getElementById('pickOverlay').classList.add('open');
 }
 
 function saveCard(status) {
-  if (!pickedCard || !currentSlot) return;
-  const pkmnLink = document.getElementById('pkmnLinkInput').value.trim();
-  collection[currentSlot.num] = {
-    name:     pickedCard.name,
-    set:      pickedCard.set?.name || '',
-    img:      pickedCard.images?.small || '',
-    imgLarge: pickedCard.images?.large || '',
-    rarity:   pickedCard.rarity || '',
-    status,
-    pkmnLink,
-    savedAt:  Date.now(),
+  if(!pickedCard||!currentSlot) return;
+  collection[currentSlot.num]={
+    name:pickedCard.name, set:pickedCard.set?.name||'',
+    img:pickedCard.images?.small||'', imgLarge:pickedCard.images?.large||'',
+    rarity:pickedCard.rarity||'', status,
+    pkmnLink:document.getElementById('pkmnLinkInput').value.trim(),
+    savedAt:Date.now()
   };
-  saveCollection();
-  renderCurrentCard();
-  renderGrid();
+  scheduleSave(); renderCurrentCard(); renderGrid();
   document.getElementById('pickOverlay').classList.remove('open');
-  const label = status === 'owned' ? `✓ ${pickedCard.name} saved as Owned!` : `☆ ${pickedCard.name} added to Wishlist!`;
-  showToast(label);
+  showToast(status==='owned'?`✓ ${pickedCard.name} saved as Owned!`:`☆ ${pickedCard.name} added to Wishlist!`);
 }
 
-document.getElementById('pickOwned').addEventListener('click',  () => saveCard('owned'));
-document.getElementById('pickWish').addEventListener('click',   () => saveCard('wishlist'));
-document.getElementById('pickCancel').addEventListener('click', () => {
-  document.getElementById('pickOverlay').classList.remove('open');
-});
-document.getElementById('pickOverlay').addEventListener('click', e => {
-  if (e.target === document.getElementById('pickOverlay')) {
-    document.getElementById('pickOverlay').classList.remove('open');
-  }
+document.getElementById('pickOwned').addEventListener('click',()=>saveCard('owned'));
+document.getElementById('pickWish').addEventListener('click',()=>saveCard('wishlist'));
+document.getElementById('pickCancel').addEventListener('click',()=>document.getElementById('pickOverlay').classList.remove('open'));
+document.getElementById('pickOverlay').addEventListener('click',e=>{
+  if(e.target===document.getElementById('pickOverlay')) document.getElementById('pickOverlay').classList.remove('open');
 });
 
 // ── TOAST ─────────────────────────────────────────────────────────────────────
-let toastTimer = null;
+let toastTimer=null;
 function showToast(msg) {
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.classList.add('show');
-  // FIX: clear previous timer so rapid toasts don't cancel each other early
-  if (toastTimer) clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => { t.classList.remove('show'); toastTimer = null; }, 2400);
+  const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show');
+  if(toastTimer) clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>{t.classList.remove('show');toastTimer=null;},2400);
 }
 
 // ── INIT ──────────────────────────────────────────────────────────────────────
-loadCollection();
-buildGenTabs();
-renderGrid();
+function initApp() {
+  buildGenTabs();
+  loadFromFirebase().then(()=>startRealtimeSync());
+}
 </script>
 </body>
 </html>
