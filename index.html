@@ -745,7 +745,7 @@ function openSlotModal(num, name) {
   document.getElementById('pkmnLinkInput').value = collection[num]?.pkmnLink||'';
   document.getElementById('modalSearchInput').value = name;
   document.getElementById('slotOverlay').classList.add('open');
-  searchCards(name);
+  setTimeout(() => searchCards(name), 300);
 }
 
 function clearSearchUI() {
@@ -820,29 +820,38 @@ async function searchCards(query) {
   loadEl.style.display='block'; emptyEl.style.display='none';
   errorEl.style.display='none'; gridEl.innerHTML=''; labelEl.textContent=''; btn.disabled=true;
 
-  try {
-    const q   = encodeURIComponent(`name:"${query}"`);
-    const res = await fetch(`https://api.pokemontcg.io/v2/cards?q=${q}&pageSize=50&orderBy=-set.releaseDate`,
-      {headers:{'X-Api-Key':API_KEY}, signal});
-    if (!res.ok) throw new Error(`API ${res.status}`);
-    const data = await res.json();
-    loadEl.style.display='none'; btn.disabled=false; searchController=null;
+  const attemptSearch = async (attempt) => {
+    try {
+      const q   = encodeURIComponent(`name:"${query}"`);
+      const res = await fetch(`https://api.pokemontcg.io/v2/cards?q=${q}&pageSize=50&orderBy=-set.releaseDate`,
+        {headers:{'X-Api-Key':API_KEY}, signal});
+      if (!res.ok) throw new Error(`API ${res.status}`);
+      const data = await res.json();
+      loadEl.style.display='none'; btn.disabled=false; searchController=null;
 
-    if (!data.data||data.data.length===0) {
-      const q2  = encodeURIComponent(`name:${query}*`);
-      const r2  = await fetch(`https://api.pokemontcg.io/v2/cards?q=${q2}&pageSize=50&orderBy=-set.releaseDate`,
-        {headers:{'X-Api-Key':API_KEY}});
-      const d2  = await r2.json();
-      if (!d2.data||d2.data.length===0) { emptyEl.style.display='block'; return; }
-      renderCardResults(d2.data,gridEl,labelEl); return;
+      if (!data.data||data.data.length===0) {
+        const q2 = encodeURIComponent(`name:${query}*`);
+        const r2 = await fetch(`https://api.pokemontcg.io/v2/cards?q=${q2}&pageSize=50&orderBy=-set.releaseDate`,
+          {headers:{'X-Api-Key':API_KEY}});
+        const d2 = await r2.json();
+        if (!d2.data||d2.data.length===0) { emptyEl.style.display='block'; return; }
+        renderCardResults(d2.data,gridEl,labelEl); return;
+      }
+      renderCardResults(data.data,gridEl,labelEl);
+    } catch(err) {
+      if (err.name==='AbortError') return;
+      if (attempt < 2) {
+        loadEl.textContent = 'Connection issue — retrying…';
+        await new Promise(r => setTimeout(r, 2000));
+        loadEl.textContent = 'Searching cards…';
+        return attemptSearch(attempt + 1);
+      }
+      loadEl.style.display='none'; btn.disabled=false;
+      errorEl.style.display='block';
+      errorEl.textContent='Search failed after 2 attempts. Tap Search to try again.';
     }
-    renderCardResults(data.data,gridEl,labelEl);
-  } catch(err) {
-    if (err.name==='AbortError') return;
-    loadEl.style.display='none'; btn.disabled=false;
-    errorEl.style.display='block';
-    errorEl.textContent=`Search failed: ${err.message}. Check your connection.`;
-  }
+  };
+  await attemptSearch(1);
 }
 
 function renderCardResults(allCards,gridEl,labelEl) {
