@@ -107,6 +107,11 @@
   .current-status.empty { color: var(--muted); border-color: var(--border); }
   .clear-btn { background: none; border: 1px solid var(--border); color: var(--muted); font-size: 11px; cursor: pointer; padding: 4px 10px; border-radius: 20px; transition: all .15s; font-family: 'DM Sans', sans-serif; white-space: nowrap; }
   .clear-btn:hover { border-color: var(--red); color: var(--red); }
+  .toggle-btn { background: none; font-size: 11px; cursor: pointer; padding: 4px 10px; border-radius: 20px; transition: all .15s; font-family: 'DM Sans', sans-serif; white-space: nowrap; font-weight: 600; }
+  .toggle-btn.to-owned { border: 1px solid var(--gold2); color: var(--gold); }
+  .toggle-btn.to-owned:hover { background: rgba(245,200,66,.15); }
+  .toggle-btn.to-wishlist { border: 1px solid var(--blue); color: var(--blue); }
+  .toggle-btn.to-wishlist:hover { background: rgba(76,201,240,.15); }
   .modal-search-bar { padding: 12px 20px; border-bottom: 1px solid var(--border); display: flex; gap: 8px; flex-shrink: 0; }
   .modal-search-input { flex: 1; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 9px 14px; font-size: 13px; color: var(--text); font-family: 'DM Sans', sans-serif; outline: none; transition: border-color .15s; min-width: 0; }
   .modal-search-input:focus { border-color: var(--gold); }
@@ -119,6 +124,12 @@
   .pkmn-link-input { flex: 1; background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; padding: 6px 10px; font-size: 11px; color: var(--text); font-family: 'DM Mono', monospace; outline: none; min-width: 0; }
   .pkmn-link-input:focus { border-color: var(--gold); }
   .pkmn-link-input::placeholder { color: var(--muted); }
+  .notes-row { padding: 8px 20px 10px; flex-shrink: 0; border-bottom: 1px solid var(--border); }
+  .notes-label { font-size: 10px; color: var(--muted); font-family: 'DM Mono', monospace; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 5px; }
+  .notes-input { width: 100%; background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; padding: 7px 10px; font-size: 12px; color: var(--text); font-family: 'DM Sans', sans-serif; outline: none; resize: none; line-height: 1.4; }
+  .notes-input:focus { border-color: var(--gold); }
+  .notes-input::placeholder { color: var(--muted); }
+  .slot-note-dot { position: absolute; top: 6px; left: 6px; width: 7px; height: 7px; border-radius: 50%; background: var(--muted); opacity: .6; }
   .modal-body { flex: 1; overflow-y: auto; padding: 14px 20px; min-height: 0; }
   .modal-body::-webkit-scrollbar { width: 5px; }
   .modal-body::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
@@ -221,6 +232,7 @@
   <button class="chip" data-filter="owned">Owned</button>
   <button class="chip" data-filter="wishlist">Wishlist</button>
   <button class="chip" data-filter="empty">Empty</button>
+  <button class="chip" data-filter="noted">📝 Noted</button>
   <span class="filter-label" style="margin-left:8px;">Gen</span>
   <div class="gen-tabs" id="genTabs"></div>
   <input class="search-box" id="nameSearch" type="text" placeholder="Search Pokémon…">
@@ -247,6 +259,10 @@
       <span class="pkmn-link-label">pkmn.gg ref:</span>
       <input class="pkmn-link-input" id="pkmnLinkInput" type="text" placeholder="https://www.pkmn.gg/cards/...">
     </div>
+    <div class="notes-row">
+      <div class="notes-label">📝 Notes</div>
+      <textarea class="notes-input" id="notesInput" rows="2" placeholder="e.g. No full art exists yet — check back after Stellar Crown..."></textarea>
+    </div>
     <div class="modal-body">
       <div id="resultsLabel" class="results-label"></div>
       <div id="resultsGrid" class="results-grid"></div>
@@ -268,6 +284,7 @@
     <div class="pick-actions">
       <button class="pick-btn owned-btn" id="pickOwned">✓ I Own This Card</button>
       <button class="pick-btn wish-btn" id="pickWish">☆ Add to Wishlist</button>
+      <button class="pick-btn cancel-btn" id="pickEdit" style="display:none">✎ Change Card</button>
       <button class="pick-btn cancel-btn" id="pickCancel">Cancel</button>
     </div>
   </div>
@@ -666,6 +683,7 @@ function renderGrid() {
     if (activeFilter==='owned'    && status!=='owned')    return false;
     if (activeFilter==='wishlist' && status!=='wishlist') return false;
     if (activeFilter==='empty'    && status!=='empty')    return false;
+    if (activeFilter==='noted'    && !collection[num]?.notes) return false;
     return true;
   });
 
@@ -688,7 +706,8 @@ function renderGrid() {
          <div class="slot-placeholder" style="display:none">◆</div>`
       : `<div class="slot-placeholder">◆</div>`;
 
-    const dotHTML = status!=='empty' ? `<div class="status-dot ${status}"></div>` : '';
+    const hasNote = entry?.notes && !entry?.img;
+    const dotHTML = status!=='empty' && entry?.img ? `<div class="status-dot ${status}"></div>` : (hasNote ? `<div class="slot-note-dot"></div>` : '');
 
     slot.innerHTML = `${imgHTML}${dotHTML}
       <div class="slot-footer">
@@ -737,15 +756,35 @@ document.getElementById('nameSearch').addEventListener('input', e => {
 
 // ── SLOT MODAL ────────────────────────────────────────────────────────────────
 function openSlotModal(num, name) {
+  const entry = collection[num];
+  // If card already assigned, show it full screen instead of searching
+  if (entry && entry.img) {
+    openCardViewer(entry, num, name);
+    return;
+  }
   currentSlot = {num,name};
   document.getElementById('modalTitle').textContent = name;
   document.getElementById('modalSub').textContent = `#${String(num).padStart(4,'0')} · Tap a card to assign it`;
   renderCurrentCard();
   clearSearchUI();
-  document.getElementById('pkmnLinkInput').value = collection[num]?.pkmnLink||'';
+  document.getElementById('pkmnLinkInput').value = '';
+  document.getElementById('notesInput').value = collection[num]?.notes||'';
   document.getElementById('modalSearchInput').value = name;
   document.getElementById('slotOverlay').classList.add('open');
-  setTimeout(() => searchCards(name), 300);
+  setTimeout(() => searchCards(name), 100);
+}
+
+function openCardViewer(entry, num, name) {
+  // Store slot context in case user wants to edit
+  currentSlot = {num, name};
+  document.getElementById('pickImg').src = entry.imgLarge || entry.img || '';
+  document.getElementById('pickName').textContent = entry.name;
+  document.getElementById('pickSub').textContent = (entry.set||'') + ' · ' + (entry.rarity||'') + ' · ' + (entry.status==='owned' ? '✓ Owned' : '☆ Wishlist');
+  document.getElementById('pickOwned').style.display = 'none';
+  document.getElementById('pickWish').style.display = 'none';
+  document.getElementById('pickEdit').style.display = '';
+  document.getElementById('pickCancel').textContent = '✕ Close';
+  document.getElementById('pickOverlay').classList.add('open');
 }
 
 function clearSearchUI() {
@@ -770,8 +809,10 @@ function renderCurrentCard() {
       <div class="current-info"><div class="current-label">Current Card</div>
       <div class="current-card-name">${escHtml(entry.name)}</div>
       <div class="current-set">${escHtml(entry.set||'')} · ${escHtml(entry.rarity||'')}</div></div>
-      <div class="current-status ${entry.status}">${entry.status==='owned'?'✓ Owned':'☆ Wishlist'}</div>
+      <div class="current-status ${entry.status}">${entry.status==='owned'?'\u2713 Owned':'\u2606 Wishlist'}</div>
+      <button class="toggle-btn ${entry.status==='owned'?'to-wishlist':'to-owned'}" id="toggleStatusBtn">${entry.status==='owned'?'\u2192 Wishlist':'\u2192 Owned'}</button>
       <button class="clear-btn" id="clearSlotBtn">Remove</button>`;
+    document.getElementById('toggleStatusBtn').addEventListener('click', toggleStatus);
     document.getElementById('clearSlotBtn').addEventListener('click', clearSlot);
   }
 }
@@ -781,6 +822,38 @@ function clearSlot() {
   delete collection[currentSlot.num];
   scheduleSave(); renderCurrentCard(); renderGrid();
   showToast(`${name} slot cleared`);
+}
+
+function saveNotes() {
+  const notes = document.getElementById('notesInput').value.trim();
+  const num = currentSlot?.num;
+  if (!num) return;
+  if (!collection[num]) {
+    // Empty slot — create a notes-only entry
+    if (notes) {
+      collection[num] = { notes, status: 'noted', savedAt: Date.now() };
+    }
+  } else {
+    collection[num].notes = notes;
+  }
+  scheduleSave();
+  renderGrid();
+}
+
+// Debounced input — saves 1 second after typing stops, no blur needed
+let notesTimer = null;
+document.getElementById('notesInput').addEventListener('input', () => {
+  if (notesTimer) clearTimeout(notesTimer);
+  notesTimer = setTimeout(() => { saveNotes(); notesTimer = null; }, 1000);
+});
+
+function toggleStatus() {
+  if (!collection[currentSlot.num]) return;
+  const current = collection[currentSlot.num].status;
+  const next = current === 'owned' ? 'wishlist' : 'owned';
+  collection[currentSlot.num].status = next;
+  scheduleSave(); renderCurrentCard(); renderGrid();
+  showToast(next === 'owned' ? `✓ Moved to Owned!` : `☆ Moved to Wishlist!`);
 }
 
 function closeSlotModal() {
@@ -822,33 +895,26 @@ async function searchCards(query) {
 
   const attemptSearch = async (attempt) => {
     try {
-      const q   = encodeURIComponent(`name:"${query}"`);
-      const res = await fetch(`https://api.pokemontcg.io/v2/cards?q=${q}&pageSize=50&orderBy=-set.releaseDate`,
+      // Single wildcard query — one request, covers all cases
+      const q   = encodeURIComponent('name:' + query + '*');
+      const res = await fetch('https://api.pokemontcg.io/v2/cards?q=' + q + '&pageSize=50&orderBy=-set.releaseDate',
         {headers:{'X-Api-Key':API_KEY}, signal});
-      if (!res.ok) throw new Error(`API ${res.status}`);
+      if (!res.ok) throw new Error('API ' + res.status);
       const data = await res.json();
       loadEl.style.display='none'; btn.disabled=false; searchController=null;
-
-      if (!data.data||data.data.length===0) {
-        const q2 = encodeURIComponent(`name:${query}*`);
-        const r2 = await fetch(`https://api.pokemontcg.io/v2/cards?q=${q2}&pageSize=50&orderBy=-set.releaseDate`,
-          {headers:{'X-Api-Key':API_KEY}});
-        const d2 = await r2.json();
-        if (!d2.data||d2.data.length===0) { emptyEl.style.display='block'; return; }
-        renderCardResults(d2.data,gridEl,labelEl); return;
-      }
+      if (!data.data||data.data.length===0) { emptyEl.style.display='block'; return; }
       renderCardResults(data.data,gridEl,labelEl);
     } catch(err) {
       if (err.name==='AbortError') return;
       if (attempt < 2) {
-        loadEl.textContent = 'Connection issue — retrying…';
-        await new Promise(r => setTimeout(r, 2000));
+        loadEl.textContent = 'Retrying…';
+        await new Promise(r => setTimeout(r, 800));
         loadEl.textContent = 'Searching cards…';
         return attemptSearch(attempt + 1);
       }
       loadEl.style.display='none'; btn.disabled=false;
       errorEl.style.display='block';
-      errorEl.textContent='Search failed after 2 attempts. Tap Search to try again.';
+      errorEl.textContent='Search failed. Tap Search to try again.';
     }
   };
   await attemptSearch(1);
@@ -888,6 +954,10 @@ function openPickModal(card) {
   document.getElementById('pickImg').src=card.images?.large||card.images?.small||'';
   document.getElementById('pickName').textContent=card.name;
   document.getElementById('pickSub').textContent=`${card.set?.name||''} · ${card.rarity||''}`;
+  // Restore buttons in case viewer mode hid them
+  document.getElementById('pickOwned').style.display='';
+  document.getElementById('pickWish').style.display='';
+  document.getElementById('pickCancel').textContent='Cancel';
   document.getElementById('pickOverlay').classList.add('open');
 }
 
@@ -898,6 +968,7 @@ function saveCard(status) {
     img:pickedCard.images?.small||'', imgLarge:pickedCard.images?.large||'',
     rarity:pickedCard.rarity||'', status,
     pkmnLink:document.getElementById('pkmnLinkInput').value.trim(),
+    notes:document.getElementById('notesInput').value.trim(),
     savedAt:Date.now()
   };
   scheduleSave(); renderCurrentCard(); renderGrid();
@@ -907,9 +978,33 @@ function saveCard(status) {
 
 document.getElementById('pickOwned').addEventListener('click',()=>saveCard('owned'));
 document.getElementById('pickWish').addEventListener('click',()=>saveCard('wishlist'));
-document.getElementById('pickCancel').addEventListener('click',()=>document.getElementById('pickOverlay').classList.remove('open'));
+function closePickOverlay() {
+  document.getElementById('pickOverlay').classList.remove('open');
+  document.getElementById('pickOwned').style.display='';
+  document.getElementById('pickWish').style.display='';
+  document.getElementById('pickEdit').style.display='none';
+  document.getElementById('pickCancel').textContent='Cancel';
+}
+
+// Edit button — opens full slot modal from viewer
+document.getElementById('pickEdit').addEventListener('click', () => {
+  closePickOverlay();
+  const {num, name} = currentSlot;
+  setTimeout(() => {
+    document.getElementById('modalTitle').textContent = name;
+    document.getElementById('modalSub').textContent = '#' + String(num).padStart(4,'0') + ' · Tap a card to assign it';
+    renderCurrentCard();
+    clearSearchUI();
+    document.getElementById('modalSearchInput').value = name;
+    document.getElementById('pkmnLinkInput').value = collection[num]?.pkmnLink||'';
+    document.getElementById('notesInput').value = collection[num]?.notes||'';
+    document.getElementById('slotOverlay').classList.add('open');
+    setTimeout(() => searchCards(name), 100);
+  }, 50);
+});
+document.getElementById('pickCancel').addEventListener('click', closePickOverlay);
 document.getElementById('pickOverlay').addEventListener('click',e=>{
-  if(e.target===document.getElementById('pickOverlay')) document.getElementById('pickOverlay').classList.remove('open');
+  if(e.target===document.getElementById('pickOverlay')) closePickOverlay();
 });
 
 // ── TOAST ─────────────────────────────────────────────────────────────────────
