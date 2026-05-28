@@ -79,6 +79,7 @@
   .slot-num { font-family: 'DM Mono', monospace; font-size: 9px; color: var(--muted); line-height: 1; }
   .slot-name { font-size: 10px; font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.3; margin-top: 1px; }
   .slot-name.empty { color: var(--muted); font-weight: 400; }
+  .slot-note-preview { font-size: 8px; color: var(--muted); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-style: italic; opacity: .8; }
   .status-dot { position: absolute; top: 6px; right: 6px; width: 7px; height: 7px; border-radius: 50%; }
   .status-dot.owned { background: var(--gold); }
   .status-dot.wishlist { background: var(--blue); }
@@ -709,10 +710,12 @@ function renderGrid() {
     const hasNote = entry?.notes && !entry?.img;
     const dotHTML = status!=='empty' && entry?.img ? `<div class="status-dot ${status}"></div>` : (hasNote ? `<div class="slot-note-dot"></div>` : '');
 
+    const notePreview = (entry?.notes && !entry?.img) ? `<div class="slot-note-preview">${escHtml(entry.notes.slice(0,28))}${entry.notes.length>28?'…':''}</div>` : '';
     slot.innerHTML = `${imgHTML}${dotHTML}
       <div class="slot-footer">
         <div class="slot-num">#${String(num).padStart(4,'0')}</div>
         <div class="slot-name ${status==='empty'?'empty':''}">${escHtml(entry?(entry.name||name):name)}</div>
+        ${notePreview}
       </div>`;
 
     slot.addEventListener('click', () => openSlotModal(num, name));
@@ -895,8 +898,8 @@ async function searchCards(query) {
 
   const attemptSearch = async (attempt) => {
     try {
-      // Single wildcard query — one request, covers all cases
-      const q   = encodeURIComponent('name:' + query + '*');
+      // Exact name + Pokémon supertype — filters out trainers/items/energy at API level
+      const q   = encodeURIComponent('name:"' + query + '" supertype:pokemon');
       const res = await fetch('https://api.pokemontcg.io/v2/cards?q=' + q + '&pageSize=50&orderBy=-set.releaseDate',
         {headers:{'X-Api-Key':API_KEY}, signal});
       if (!res.ok) throw new Error('API ' + res.status);
